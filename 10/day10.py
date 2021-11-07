@@ -27,7 +27,6 @@ for row  in data:
 This function determines the slope and quadrant of a given point in a matrix relative to
 the origin, it returns a tuple with the calculated slope and quadrant
 '''
-
 def determineSlopeQuadrant(xOrigin, yOrigin, xTarget, yTarget):
 
     if ((yOrigin - yTarget) == 0): #Avoid division by zero
@@ -85,8 +84,4 @@ for i in range(xlength):
         if(matrixOfsights[i][j] == maxValue):
             stationPos = (i,j)
             print(f"Monitoring Station is located at: {stationPos}")
-
-#Part 2
-#Calculate the gradient of each asteroid relative to the position of the monitoring station
-
 
