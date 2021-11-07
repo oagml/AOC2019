@@ -77,27 +77,16 @@ for i in range(xlength):
 
 print(matrixOfsights)
 
-print(np.amax(matrixOfsights))
+maxValue = np.amax(matrixOfsights)
+print(maxValue)
 
-#Once you have the matrix loop through every position in the matrix and analyse how many asteroids
-#they can see
+for i in range(xlength):
+    for j in range(ylength):
+        if(matrixOfsights[i][j] == maxValue):
+            stationPos = (i,j)
+            print(f"Monitoring Station is located at: {stationPos}")
 
-#As you loop through each asteroid in the matrix, identify every line of sight with other asteroids
-#and store every slope you find in a set of slopes, also identify the distance of to each asteroid
-#if you find an asteroid with a slope previously found, compare the distance and the one with the lesser distance
-#is the one in the actual sight
-#Make matrix where you store the number of asteroids each asteroid is seeing like this:
-'''
-.7..7
-.....
-67775
-....7
-...87
+#Part 2
+#Calculate the gradient of each asteroid relative to the position of the monitoring station
 
-'''
-#Another possible solution is to just count the slopes, if you find an asteroid, store the slope,
-#if you then find another asteroid with the same slope, just ignore it.
-
-
-#Determine the asteroid with the highest number of visible asteroids
 
