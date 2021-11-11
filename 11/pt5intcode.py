@@ -38,7 +38,7 @@ def rotate (currdir, direction):
         print("Error: Reached an invalid input")
 
 
-giveninput = 0
+giveninput = 1 #Starts on a white panel
 output = 0
 relativeBase = 0
 halt = 0
@@ -51,7 +51,9 @@ currentColor = "Black"
 currentRow = 500 #Start from the middle of the matrix
 currentCol = 500 #Start from the middle of the matrix
 
+
 matrix = np.full((1000,1000), '.')
+matrix[currentRow][currentCol] = '#' #Start on a white panel
 
 positionsReached = set()
 
@@ -74,11 +76,14 @@ while (halt != 99):
     elif instruction[3] == 3: #Input
         #print("Input...")
         if matrix[currentRow][currentCol] == '.': #If the robot is over a black panel
-            print("Painting black")
+            print("Robot is over a black panel")
             giveninput = 0
-        else: #If the robot is over a white panel
-            print("Painting white")
+        elif matrix[currentRow][currentCol] == '#': #If the robot is over a white panel
+            print("Robot is over a white panel")
             giveninput = 1
+        else:
+            print("Error")
+
         intcode.programinput(listcopy, pos, giveninput, instruction, relativeBase)
         pos += 2
 
@@ -91,9 +96,11 @@ while (halt != 99):
         if (outputOrder%2): #If the output is odd, it's a paint instruction
             if(output == 0): #Paint the panel black
                 matrix[currentRow][currentCol] = '.'
+                print("Painting black panel")
                 positionsReached.add((currentRow,currentCol))
             else: #Paint the panel white
                 matrix[currentRow][currentCol] = '#'
+                print("Painting white panel")
                 positionsReached.add((currentRow,currentCol))
 
         else: #If the ouput is even, it's a direction instruction
@@ -148,6 +155,8 @@ while (halt != 99):
 
 print(positionsReached)
 print(len(positionsReached))
+
+np.savetxt("matrix.txt", matrix, fmt = '%s')
 
 '''
 for i in range(0, len(outputlist), 2):
