@@ -2,235 +2,175 @@
 #See the advent of code 2019, Day 11
 
 import itertools
+import intcode
+import numpy as np
 
 data = open('inputdata', 'r').read().split(',')
 
 listcopy = []
 
 for i in data:
-    listcopy.append(int(i))
+    listcopy.append(int(i)) #Copy original list
 
-for i in range(10000000):
+for i in range(10000000): #What is this
     listcopy.append(0)
 
-amplifiers = []
-for i in range(5):
-    amplifiers.append(listcopy.copy())
+def rotate (currdir, direction):
+    if (direction == 0 and currdir == "Up"): #Turn left
+        return "Left"
+    elif (direction == 0 and currdir == "Left"): #Turn down
+        return "Down"
+    elif (direction == 0 and currdir == "Right"): #Turn up
+        return "Up"
+    elif (direction == 0 and currdir == "Down"): #Turn right
+        return "Right"
 
-def get_parameters(inputlist, position,  instruction, relativeBase):
-    if instruction[2] == 0: #Position Mode
-        print(inputlist[position + 1])
-        parameter1 = inputlist[inputlist[position+1]]
-    elif instruction[2] == 1:   #Immediate Mode
-        parameter1 = inputlist[position+1]
-    else:                   #Relative Mode
-        parameter1 = inputlist[inputlist[position+1] + relativeBase]
-
-                                                  
-    if instruction[1] == 0: #Position Mode
-        parameter2 = inputlist[inputlist[position+2]]
-    elif instruction[1] == 1:   #Immediate Mode
-        parameter2 = inputlist[position+2]
-    else:                    #Relative Mode
-        parameter2 = inputlist[inputlist[position+2] + relativeBase] 
-
-    return parameter1, parameter2
-
-
-def addition (inputlist, position, instruction, relativeBase):
-    
-    parameter1, parameter2 = get_parameters(inputlist, position, instruction, relativeBase)
-
-    print(f'{parameter1} + {parameter2} = {parameter1 + parameter2}')
-    if (instruction[0] == 2): #Write in Relative Mode
-        inputlist[inputlist[position + 3] + relativeBase] = parameter1 + parameter2
-    else:                   #Write in Position Mode 
-        inputlist[inputlist[position + 3]] = parameter1 + parameter2
-    
-
-def multiplication (inputlist, position, instruction, relativeBase):
-
-    parameter1, parameter2 = get_parameters(inputlist, position, instruction, relativeBase)
-
-    print(f'{parameter1} * {parameter2} = {parameter1 *  parameter2}')
-
-    if (instruction[0] == 2): #Write in Relative Mode
-        inputlist[inputlist[position + 3] + relativeBase] = parameter1 * parameter2
-    else:                   #Write in Position Mode
-        inputlist[inputlist[position + 3]] = parameter1 * parameter2
-    
-
-def programinput (inputlist, position, inputparam, instruction, relativeBase):
-    if (instruction[2] == 2):   #Relative Mode
-        inputlist[inputlist[position + 1] + relativeBase] = inputparam
-    else:                       #Position Mode
-        inputlist[inputlist[position + 1]] = inputparam
-
-
-def programoutput (inputlist, position, instruction, relativeBase):
-    if(instruction[2] == 0): #Position Mode
-        return inputlist[inputlist[position+1]]
-    elif(instruction[2] == 1): #Immediate Mode
-            return inputlist[position + 1]
-    elif (instruction[2] == 2): #Relative Mode
-        return inputlist[inputlist[position + 1] + relativeBase]
-
-def jump_if_true(inputlist, position, instruction, relativeBase):
-    parameter1, parameter2 = get_parameters(inputlist, position, instruction, relativeBase)
-    if parameter1 != 0:
-        return parameter2
-    else:
-        return (position + 3)
-
-def jump_if_false(inputlist, position, instruction, relativeBase):
-    parameter1, parameter2 = get_parameters(inputlist, position, instruction, relativeBase)
-    if parameter1 == 0:
-        return parameter2
-    else:
-        return (position + 3)
-
-def less_than(inputlist, position, instruction, relativeBase):
-    parameter1, parameter2 = get_parameters(inputlist, position, instruction, relativeBase)
-    if parameter1 < parameter2:
-        if (instruction[0] == 0): #Position Mode
-            inputlist[inputlist[position + 3]] = 1
-        elif (instruction[0] == 1): #Immediate Mode
-            inputlist[position + 3] = 1
-        else:                   #Relative Mode
-            inputlist[inputlist[position + 3] + relativeBase] = 1
-    else:
-        if (instruction[0] == 0): #Position Mode
-            inputlist[inputlist[position + 3]] = 0
-        elif (instruction[0] == 1):  #Immediate Mode
-            inputlist[position + 3] = 0
-        else:                       #Relative Mode
-            inputlist[inputlist[position + 3] + relativeBase] = 0
-
-
-def equals_func(inputlist, position, instruction, relativeBase):
-    parameter1, parameter2 = get_parameters(inputlist, position, instruction, relativeBase)
-    if parameter1 == parameter2:
-        if (instruction[0] == 0): #Position Mode 
-            inputlist[inputlist[position + 3]] = 1
-        elif (instruction[0] == 1):                   #Immediate Mode
-            inputlist[position + 3] = 1
-        else:                   #Relative Mode 
-            inputlist[inputlist[position + 3] + relativeBase] = 1
-    else:
-        if (instruction[0] == 0): #Position Mode
-            inputlist[inputlist[position + 3]] = 0
-        elif (instruction[0] == 1): #Immediate Mode
-            inputlist[position + 3] = 0
-        else:                       #Relative Mode
-            inputlist[inputlist[position + 3] + relativeBase] = 0
-
-def adjust_base(inputlist, position, instruction, relativeBase): 
-
-    if instruction[2] == 2:         #Relative Mode
-        return (inputlist[inputlist[position + 1] + relativeBase] + relativeBase)
-    elif instruction[2] == 0:       #Postion Mode
-        return (inputlist[inputlist[position + 1]] + relativeBase)
-    else:                           #Immediate Mode
-        return (inputlist[position + 1] + relativeBase)
-
-
-def instruction_decoder (instruction):
-
-    opcode = instruction % 100 #Use modulus operation to get the last two digits of a number
-    valid_opcodes = {1,2,3,4,5,6,7,8,9,99}
-    
-    if opcode in valid_opcodes:
-        print(f'Valid instruction: .....{instruction}')
-        instruction_string = str(instruction)
-
-        output_list = [0,0,0,0]
-        output_list[3] = opcode 
-        output_list[2] = (instruction%1000)//100 #Use modulus and  rounded division to get hundreds value
-        output_list[1] = (instruction%10000)//1000
-        output_list[0] = (instruction%100000)//10000
-
-        print(output_list) 
-        return output_list
+    elif (direction == 1 and currdir == "Up"): #Turn right
+        return "Right"
+    elif (direction == 1 and currdir == "Left"): #Turn Up
+        return "Up"
+    elif (direction == 1 and currdir == "Right"): #Turn down
+        return "Down"
+    elif  (direction == 1 and currdir == "Down"): #Turn left
+        return "Left"
 
     else:
-        print(f'Instruction not valid: {instruction}')
-        return False
+        print("Error: Reached an invalid input")
 
 
-def intcodeprocessing(program, giveninput, pos, relativeBase):
-
-    halt = 0
-
-    output = 0
-
-    while (halt != 99):
-
-        instruction = instruction_decoder(program[pos])
-
-        if instruction == False:
-            break
-
-        elif instruction[3] == 1: #Add
-            print("Adding...")
-            addition(program, pos, instruction, relativeBase)
-            pos += 4
-        elif instruction[3] == 2: #Multiply
-            print("Multiplying...")
-            multiplication(program, pos, instruction, relativeBase)
-            pos += 4
-
-        elif instruction[3] == 3: #Input
-            print("Input...")
-            programinput(program, pos, giveninput, instruction, relativeBase)
-            pos += 2
-
-        elif instruction[3] == 4: #Output
-            print("Output................................................................")
-            output = programoutput(program, pos, instruction, relativeBase)
-            print(output)
-            pos += 2
-
-        elif instruction[3] == 5: #Jump If True
-            print("Jump If True...")
-            pos = jump_if_true(program, pos, instruction, relativeBase) #This function returns  pointer value
-
-        elif instruction[3] == 6: #Jump If False
-            print("Jump If False...")
-            pos = jump_if_false(program, pos, instruction, relativeBase) #This function returns  pointer value
-
-        elif instruction[3] == 7: #Less Than
-            print("Less Than...")
-            less_than(program, pos, instruction, relativeBase)
-            pos += 4
-
-        elif instruction[3] == 8: #Equals
-            print("Equals...")
-            equals_func(program, pos, instruction, relativeBase)
-            pos += 4
-
-        elif instruction[3] == 9: #Adjust Relative Base
-            print("Adjusting Base...")
-            relativeBase = adjust_base(program, pos, instruction, relativeBase)
-            pos += 2
-
-        elif instruction[3] == 99: #Halt
-            halt = 99
-            print("Halt condition has been reached")
-        else:
-            halt = 99
-            print("Error: Unexpected Opcode")
-
-
-        print(f'New position: {pos}')
-
-    return output, pos, halt, program
-
-
-giveninput = 2
+giveninput = 0
+output = 0
 relativeBase = 0
 halt = 0
 pos = 0
+outputOrder = 1
+orientation = ["Left","Up","Right","Down"]
+paint = ["Black", "White"]
+currentDirection = "Up"
+currentColor = "Black"
+currentRow = 500 #Start from the middle of the matrix
+currentCol = 500 #Start from the middle of the matrix
 
-intcodeprocessing(listcopy, giveninput, pos, relativeBase)
+matrix = np.full((1000,1000), '.')
 
-#print(listcopy)
+positionsReached = set()
+
+while (halt != 99):
+
+    instruction = intcode.instruction_decoder(listcopy[pos])
+
+    if instruction == False:
+        break
+
+    elif instruction[3] == 1: #Add
+        #print("Adding...")
+        intcode.addition(listcopy, pos, instruction, relativeBase)
+        pos += 4
+    elif instruction[3] == 2: #Multiply
+        #print("Multiplying...")
+        intcode.multiplication(listcopy, pos, instruction, relativeBase)
+        pos += 4
+
+    elif instruction[3] == 3: #Input
+        #print("Input...")
+        if matrix[currentRow][currentCol] == '.': #If the robot is over a black panel
+            print("Painting black")
+            giveninput = 0
+        else: #If the robot is over a white panel
+            print("Painting white")
+            giveninput = 1
+        intcode.programinput(listcopy, pos, giveninput, instruction, relativeBase)
+        pos += 2
+
+    elif instruction[3] == 4: #Output
+        output = intcode.programoutput(listcopy, pos, instruction, relativeBase)
+        #outputlist.append(output)
+        print("Output................................................................")
+        print(output)
+
+        if (outputOrder%2): #If the output is odd, it's a paint instruction
+            if(output == 0): #Paint the panel black
+                matrix[currentRow][currentCol] = '.'
+                positionsReached.add((currentRow,currentCol))
+            else: #Paint the panel white
+                matrix[currentRow][currentCol] = '#'
+                positionsReached.add((currentRow,currentCol))
+
+        else: #If the ouput is even, it's a direction instruction
+            if(rotate(currentDirection, output) == "Up"):
+                currentDirection = "Up"
+                currentRow -= 1
+            elif (rotate(currentDirection, output) == "Down"):
+                currentDirection = "Down"
+                currentRow += 1
+            elif (rotate(currentDirection, output) == "Right"):
+                currentDirection = "Right"
+                currentCol += 1
+            elif (rotate(currentDirection, output) == "Left"):
+                currentDirection = "Left"
+                currentCol -= 1
+
+        pos += 2
+        outputOrder += 1
+
+    elif instruction[3] == 5: #Jump If True
+        #print("Jump If True...")
+        pos = intcode.jump_if_true(listcopy, pos, instruction, relativeBase) #This function returns  pointer value
+
+    elif instruction[3] == 6: #Jump If False
+        #print("Jump If False...")
+        pos = intcode.jump_if_false(listcopy, pos, instruction, relativeBase) #This function returns  pointer value
+
+    elif instruction[3] == 7: #Less Than
+        #print("Less Than...")
+        intcode.less_than(listcopy, pos, instruction, relativeBase)
+        pos += 4
+
+    elif instruction[3] == 8: #Equals
+        #print("Equals...")
+        intcode.equals_func(listcopy, pos, instruction, relativeBase)
+        pos += 4
+
+    elif instruction[3] == 9: #Adjust Relative Base
+        #print("Adjusting Base...")
+        relativeBase = intcode.adjust_base(listcopy, pos, instruction, relativeBase)
+        pos += 2
+
+    elif instruction[3] == 99: #Halt
+        halt = 99
+        print("Halt condition has been reached")
+    else:
+        halt = 99
+        print("Error: Unexpected Opcode")
+
+
+    #print(f'New position: {pos}')
+
+print(positionsReached)
+print(len(positionsReached))
+
+'''
+for i in range(0, len(outputlist), 2):
+    if (outputlist[i] == 0 and matrix[currentRow][currentCol] == '#'):
+        matrix[currentRow][currentCol] = '.'
+        positionsReached.add((currentRow,currentCol))
+    elif (outputlist[i] == 1 and matrix[currentRow][currentCol] == '.'):
+        matrix[currentRow][currentCol] = '#'
+        positionsReached.add((currentRow,currentCol))
+
+    if (rotate(currentDirection, outputlist[i + 1]) == "Up"):
+        currentDirection = "Up"
+        currentRow -= 1
+
+    elif (rotate(currentDirection, outputlist[i + 1]) == "Down"):
+        currentDirection = "Down"
+        currentRow += 1
+
+    elif (rotate(currentDirection, outputlist[i + 1]) == "Right"):
+        currentDirection = "Right"
+        currentCol += 1
+
+    elif (rotate(currentDirection, outputlist[i + 1]) == "Left"):
+        currentDirection = "Left"
+        currentCol -= 1
+'''
